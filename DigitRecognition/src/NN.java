@@ -100,12 +100,17 @@ class NN {
 
     Matrix gradientDescent(Matrix X, Matrix y, Matrix nn_params, double alpha, int num_iters, int input_layer_size, int hidden_layer_size, int num_labels, double lambda) {
         int m = X.getRowDimension();
-        CostFunctionValues c = this.nnCostFunction(nn_params, input_layer_size, hidden_layer_size, num_labels, X, y, lambda);
+        CostFunctionValues c = null;
         int i = 1;
         for (; i <= num_iters; i++) {
             //fill in code here
-            System.out.println("Iteration:" + i + " | Cost:" + c.cost);
+            c = nnCostFunction(nn_params, input_layer_size, hidden_layer_size, num_labels, X, y, lambda);
+            nn_params = nn_params.minus(c.gradient.times(alpha / m));
+            if (i % 10 == 0) {
+                System.out.println("Iteration:" + i + " | Cost:" + c.cost);
+            }
         }
+        System.out.println("Iteration:" + i + " | Cost:" + c.cost);
         return nn_params;
     }
 
@@ -113,7 +118,7 @@ class NN {
 
         Matrix theta1 = reshapeTheta1(nn_params, hidden_layer_size, input_layer_size + 1);
         Matrix theta2 = reshapeTheta2(nn_params, num_labels, hidden_layer_size + 1);
-      
+
         int m = X.getRowDimension();
         double J = 0;//cost
 
@@ -127,21 +132,52 @@ class NN {
 
         for (int i = 0; i < m; i++) {
             //fill in code here
-            a1 = this.appendWithOnes(X.getMatrix(i, i, 0, X.getColumnDimension()-1), "col").transpose();
+            a1 = this.appendWithOnes(X.getMatrix(0, 0, 0, X.getColumnDimension() - 1), "col").transpose();
             z2 = theta1.times(a1);
             a2 = this.appendWithOnes(this.sigmoid(z2), "row");
             z3 = theta2.times(a2);
             h = sigmoid(z3);
-            
+
             yi = new Matrix(num_labels, 1);
-            
-            
-            
-            
+            yi.set((int) y.get(i, 0) - 1, 0, 1.d);
+
+            d3 = h.minus(yi);
+            d2 = theta2.getMatrix(0, theta2.getRowDimension() - 1, 1, theta2.getColumnDimension() - 1);
+            d2 = ((d2.transpose()).times(d3)).arrayTimes(sigmoidGradient(z2));
+
+            theta1Grad = theta1Grad.plus(d2.times(a1.transpose()));
+            theta2Grad = theta2Grad.plus(d3.times(a2.transpose()));
+            J += sum(negateValues(yi).arrayTimes(log(h)).minus(oneminus(yi)).arrayTimes(log(oneminus(h))));
+
         }
         //fill in code here
+        J = J / m;
+
+        t1 = theta1.getMatrix(0, theta1.getRowDimension() - 1, 1, theta1.getColumnDimension() - 1);
+        t2 = theta2.getMatrix(0, theta2.getRowDimension() - 1, 1, theta2.getColumnDimension() - 1);
+
+        t1col1 = theta1Grad.getMatrix(0, theta1Grad.getRowDimension() - 1, 0, 0);
+        t2col1 = theta2Grad.getMatrix(0, theta2Grad.getRowDimension() - 1, 0, 0);
+
+        t1col2_to_n = theta1Grad.getMatrix(0, theta1Grad.getRowDimension() - 1, 1, theta1Grad.getColumnDimension() - 1);
+        t2col2_to_n = theta2Grad.getMatrix(0, theta2Grad.getRowDimension() - 1, 1, theta2Grad.getColumnDimension() - 1);
+
+        t1col2_to_n = t1col2_to_n.plus(t1.times(lambda / m));
+        t2col2_to_n = t2col2_to_n.plus(t2.times(lambda / m));
+
+        theta1Grad = joinMatrixByColumns(t1col1, t1col2_to_n);
+        theta2Grad = joinMatrixByColumns(t2col1, t2col2_to_n);
+        double t1Sum = sum(squared(t1));
+        double t2Sum = sum(squared(t2));
+
+        double r = (lambda / (2 * m)) * (t1Sum + t2Sum);
+        J = J + r;
+
         cfv.cost = J;
-        cfv.gradient = this.joinMatrixByColumns(theta1Grad, theta2Grad);
+
+        grad = unroll(theta1Grad, theta2Grad);
+        cfv.gradient = grad;
+
         return cfv;
     }
 
@@ -384,6 +420,7 @@ class NN {
 }
 
 class CostFunctionValues {
+
     double cost;
     Matrix gradient;
 }
