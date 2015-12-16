@@ -122,7 +122,7 @@ class NN {
 
         Matrix subX = X.getMatrix(0, 0, 0, X.getColumnDimension() - 1);
 
-        Matrix a1, z2, a2, z3, h, yi, d3, d2, a, b, t1, t2, t1col1, t2col1, t1col2_to_n, t2col2_to_n, grad;
+        Matrix a1, z2, a2, z3, h, yk, d3, d2, a, b, t1, t2, t1col1, t2col1, t1col2_to_n, t2col2_to_n, grad;
         CostFunctionValues cfv = new CostFunctionValues();
         a1 = this.appendWithOnes(X, "col");
         
@@ -133,14 +133,18 @@ class NN {
         
         h = sigmoid(theta2.times(a2.transpose()));
         
-        yi = new Matrix(num_labels, m);
-        for (int i = 0; i < m; i++) {
-            //fill in code here    
-            yi.set(0, (int) y.get(i, 0) - 1, 1.d);
+        yk = new Matrix(num_labels, m);
+        
+        for (int sample = 0; sample < m; sample++) {
+            //fill in code here
+            yk.set((int) y.get(sample, 0) - 1, sample, 1.d);
         }
         //follow the form
-        J = (1.d/m)*sum(negateValues(yi).arrayTimes(log(h)).minus(oneminus(yi)).arrayTimes(log(oneminus(h))));
+        //J = (1.d/m)*sum((yk.uminus()).arrayTimes(log(h)).minus(oneminus(yk)).arrayTimes(log(oneminus(h))));
+
+                
         
+        J = (1.d/m)*(sum((yk.uminus()).arrayTimes(log(h)).minus(oneminus(yk).arrayTimes(log(oneminus(h))))));
         
         t1 = theta1.getMatrix(0, theta1.getRowDimension() - 1, 1, theta1.getColumnDimension() - 1);
         t2 = theta2.getMatrix(0, theta2.getRowDimension() - 1, 1, theta2.getColumnDimension() - 1);
@@ -166,7 +170,7 @@ class NN {
             //back propag
             z2 = this.appendWithOnes(z2, "row");
             
-            Matrix output = yi.getMatrix(0,yi.getRowDimension()-1, t,t);
+            Matrix output = yk.getMatrix(0,yk.getRowDimension()-1, t,t);
 
             d3 = h.minus(output);
             d2 = theta2.transpose().times(d3).arrayTimes(sigmoidGradient(z2));
