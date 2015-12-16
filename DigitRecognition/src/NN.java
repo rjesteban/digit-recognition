@@ -412,7 +412,8 @@ class NN {
         for (int i = 0; i < m; i++) {
             if (pred.get(i, 0) == y.get(i, 0)) {
                 sum++;
-            }
+            } else if ( pred.get(i,0) == 0 && y.get(i,0) == 10)
+                sum++;
         }
         double accuracy = (sum / m) * 100.0;
         return accuracy;
