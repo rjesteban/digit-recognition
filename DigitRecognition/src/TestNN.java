@@ -11,7 +11,7 @@ class TestNN {
         int hidden_layer_size = 25;
         int num_labels = 10;
         double lambda = 1;
-        int num_iters = 1000;
+        int num_iters = 50;
         double alpha = 10;
 
         NN nn = new NN(input_layer_size, hidden_layer_size, num_labels, lambda, num_iters);
