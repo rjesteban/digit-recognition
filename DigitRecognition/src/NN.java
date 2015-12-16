@@ -124,12 +124,12 @@ class NN {
 
         Matrix a1, z2, a2, z3, h, yi, d3, d2, a, b, t1, t2, t1col1, t2col1, t1col2_to_n, t2col2_to_n, grad;
         CostFunctionValues cfv = new CostFunctionValues();
-
         a1 = this.appendWithOnes(X, "col");
+        
         z2 = theta1.times(a1.transpose());
         a2 = sigmoid(z2);
-        a2 = this.appendWithOnes(a2, "row");
-        a2 = a2.transpose();
+        
+        a2 = this.appendWithOnes(a2.transpose(), "col");
         
         h = sigmoid(theta2.times(a2.transpose()));
         
@@ -159,7 +159,6 @@ class NN {
             
             a2 = sigmoid(z2);
             a2 = this.appendWithOnes(a2, "row");
-            
             z3 = theta2.times(a2);
             
             h = sigmoid(z3);           
@@ -290,10 +289,11 @@ class NN {
 
     Matrix sigmoid(Matrix m) {
         int row = m.getRowDimension();
-        double[][] ar = new double[row][m.getColumnDimension()];
+        int col = m.getColumnDimension();
+        double[][] ar = new double[row][col];
         for (int i = 0; i < row; i++) {
-            for (int j = 0; j < ar[i].length; j++) {
-                ar[i][j] = 1 / (1 + Math.exp(-1 * m.get(i, j)));
+            for (int j = 0; j < col; j++) {
+                ar[i][j] = 1.0 / (1.0 + Math.exp((-1)*m.get(i, j)));
             }
 
         }
@@ -301,26 +301,26 @@ class NN {
     }
 
     Matrix appendWithOnes(Matrix m, String where) {
-        double[][] ar = null;
+        double[][] ar = new double[0][0];
         if (where.equals("col")) {
             ar = new double[m.getRowDimension()][m.getColumnDimension() + 1];
         } else if (where.equals("row")) {
             ar = new double[m.getRowDimension() + 1][m.getColumnDimension()];
         }
 
-        for (int i = 0; i < m.getRowDimension(); i++) {
-            for (int j = 0; j < m.getColumnDimension(); j++) {
+        for (int i = 0; i < ar.length; i++) {
+            for (int j = 0; j < ar[0].length; j++) {
                 if (where.equals("col")) {
                     if (j == 0) {
                         ar[i][j] = 1;
                     } else {
-                        ar[i][j] = m.get(i, j);
+                        ar[i][j] = m.get(i, j-1);
                     }
                 } else if (where.equals("row")) {
                     if (i == 0) {
                         ar[i][j] = 1;
                     } else {
-                        ar[i][j] = m.get(i, j);
+                        ar[i][j] = m.get(i-1, j);
                     }
                 }
 
