@@ -132,7 +132,7 @@ class NN {
 
         for (int i = 0; i < m; i++) {
             //fill in code here
-            a1 = this.appendWithOnes(X.getMatrix(0, 0, 0, X.getColumnDimension() - 1), "col").transpose();
+            a1 = this.appendWithOnes(X.getMatrix(i, i, 0, X.getColumnDimension() - 1), "col").transpose();
             z2 = theta1.times(a1);
             a2 = this.appendWithOnes(this.sigmoid(z2), "row");
             z3 = theta2.times(a2);
