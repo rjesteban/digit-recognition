@@ -117,8 +117,8 @@ class NN {
         Matrix theta2 = reshapeTheta2(nn_params, num_labels, hidden_layer_size + 1);
         int m = X.getRowDimension();
         double J = 0;//cost
-        Matrix theta1Grad = zeros(theta1);
-        Matrix theta2Grad = zeros(theta2);
+        Matrix theta1Grad = new Matrix(theta1.getRowDimension(), theta1.getColumnDimension());
+        Matrix theta2Grad = new Matrix(theta2.getRowDimension(), theta2.getColumnDimension());
 
         Matrix subX = X.getMatrix(0, 0, 0, X.getColumnDimension() - 1);
 
@@ -140,10 +140,6 @@ class NN {
             yk.set((int) y.get(sample, 0) - 1, sample, 1.d);
         }
         //follow the form
-        //J = (1.d/m)*sum((yk.uminus()).arrayTimes(log(h)).minus(oneminus(yk)).arrayTimes(log(oneminus(h))));
-
-                
-        
         J = (1.d/m)*(sum((yk.uminus()).arrayTimes(log(h)).minus(oneminus(yk).arrayTimes(log(oneminus(h))))));
         
         t1 = theta1.getMatrix(0, theta1.getRowDimension() - 1, 1, theta1.getColumnDimension() - 1);
@@ -155,53 +151,53 @@ class NN {
         J = J + r;
         
         //backprop
+        //a1.print(5,20);
+        //a1 = this.appendWithOnes(X,"col");
+        //a1.print(6,20); //after
         for (int t = 0; t < m; t++) {
             //fill in code here
             //X is 400 x 5000
-            a1 = this.appendWithOnes(X.getMatrix(t, t, 0, X.getColumnDimension() - 1), "col");
-            z2 = theta1.times(a1.transpose());
             
+            
+           // System.out.println("theta1: " + theta1.getRowDimension() + "x" + theta1.getColumnDimension());
+            //System.out.println("a1tomult: " + a1.getMatrix(t,t,0,a1.getColumnDimension()-1).transpose().getRowDimension() + "x" + a1.getMatrix(t,t,0,X.getColumnDimension()-1).transpose().getColumnDimension());
+            //a1 = this.appendWithOnes(X.getMatrix(t, t, 0, X.getColumnDimension() - 1), "col");
+            //System.out.println("a1appendwithones: " + a1.getRowDimension() + "x" + a1.getColumnDimension());
+            z2 = theta1.times(a1.getMatrix(t,t,0,a1.getColumnDimension()-1).transpose());
             a2 = sigmoid(z2);
             a2 = this.appendWithOnes(a2, "row");
             z3 = theta2.times(a2);
             
-            h = sigmoid(z3);           
+            h = sigmoid(z3);
+            
             
             //back propag
             z2 = this.appendWithOnes(z2, "row");
             
             Matrix output = yk.getMatrix(0,yk.getRowDimension()-1, t,t);
-
+            
             d3 = h.minus(output);
             d2 = theta2.transpose().times(d3).arrayTimes(sigmoidGradient(z2));
-            
             //skipping sigma2(0)
             d2 = d2.getMatrix(1,d2.getRowDimension()-1, 0,0);
 
             theta2Grad = theta2Grad.plus(d3.times(a2.transpose()));
-            theta1Grad = theta1Grad.plus(d2.times(a1));
-        }
-        
-        //theta1 25x401
-        //theta2 10x26
-        
+            theta1Grad = theta1Grad.plus(d2.times(a1.getMatrix(t,t,0,a1.getColumnDimension()-1)));
+        }   
         //regularization
-        //Theta1_grad(:, 1) = Theta1_grad(:, 1) ./ m;
-        t1col1 = theta1Grad.getMatrix(0, theta1Grad.getRowDimension() - 1, 0, 0).times(1.d/m);        
-        //Theta1_grad(:, 2:end) = Theta1_grad(:, 2:end) ./ m + ((lambda/m) * Theta1(:, 2:end));
+        t1col1 = theta1Grad.getMatrix(0, theta1Grad.getRowDimension() - 1, 0, 0).times(1.d/m);
         t1col2_to_n = theta1Grad.getMatrix(0, theta1Grad.getRowDimension() - 1, 1, theta1Grad.getColumnDimension() - 1);
-        t1col2_to_n = (t1col2_to_n.times(1.d/m)).plus(t1.times(lambda / m));
+        t1col2_to_n = (t1col2_to_n.times(1.d/m)).plus(t1.times(lambda / m));        
         
-        
-        //Theta2_grad(:, 1) = Theta2_grad(:, 1) ./ m;
         t2col1 = theta2Grad.getMatrix(0, theta2Grad.getRowDimension() - 1, 0, 0).times(1.d/m);
-        //Theta2_grad(:, 2:end) = Theta2_grad(:, 2:end) ./ m + ((lambda/m) * Theta2(:, 2:end));
         t2col2_to_n = theta2Grad.getMatrix(0, theta2Grad.getRowDimension() - 1, 1, theta2Grad.getColumnDimension() - 1);
         t2col2_to_n = (t2col2_to_n.times(1.d/m)).plus(t2.times(lambda / m));
-        
+       
         
         theta1Grad = joinMatrixByColumns(t1col1, t1col2_to_n);
         theta2Grad = joinMatrixByColumns(t2col1, t2col2_to_n);
+        
+       
         
         cfv.cost = J;
         grad = unroll(theta1Grad, theta2Grad);
@@ -212,7 +208,7 @@ class NN {
 
     Matrix joinMatrixByColumns(Matrix a, Matrix b) {
         double[][] ar = new double[a.getRowDimension()][a.getColumnDimension() + b.getColumnDimension()];
-        for (int i = 0; i < a.getColumnDimension(); i++) {
+        for (int i = 0; i < a.getRowDimension(); i++) {
             for (int j = 0; j < ar[i].length; j++) {
                 if (j == 0) {//first column
                     ar[i][j] = a.get(i, 0);
@@ -287,7 +283,7 @@ class NN {
 
     Matrix sigmoidGradient(Matrix m) {
         Matrix g = sigmoid(m);
-        g = g.arrayTimes(new Matrix(new double[m.getRowDimension()][m.getColumnDimension()]).minus(g));
+        g = g.arrayTimes(oneminus(g));
         return g;
     }
 
@@ -409,9 +405,9 @@ class NN {
         Matrix temp = appendWithOnes(X, "col");
 
         Matrix h1 = sigmoid(temp.times(theta1.transpose()));
-        temp = appendWithOnes(h1, "col");
+        Matrix temp2 = appendWithOnes(h1, "col");
 
-        Matrix h2 = sigmoid(temp.times(theta2.transpose()));
+        Matrix h2 = sigmoid(temp2.times(theta2.transpose()));
         p = max(h2);
         return p;
     }
@@ -440,10 +436,9 @@ class NN {
         int m = pred.getRowDimension();
         double sum = 0.0;
         for (int i = 0; i < m; i++) {
-            if (pred.get(i, 0) == y.get(i, 0)) {
+            if ((pred.get(i, 0)+1) == y.get(i, 0)) {
                 sum++;
-            } else if ( pred.get(i,0) == 0 && y.get(i,0) == 10)
-                sum++;
+            }
         }
         double accuracy = (sum / m) * 100.0;
         return accuracy;
