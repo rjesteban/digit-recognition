@@ -107,6 +107,8 @@ class NN {
             c = nnCostFunction(nn_params, input_layer_size, hidden_layer_size, num_labels, X, y, lambda);
             nn_params = nn_params.minus(c.gradient.times(alpha / m));
             System.out.println("Iteration:" + i + " | Cost:" + c.cost);
+            if (c.cost < 0.1)
+                break;
         }
         return nn_params;
     }

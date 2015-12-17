@@ -12,8 +12,8 @@ class TestNN {
         int num_labels = 10;
         double lambda = 1;
         int num_iters = 1000;
-        double alpha = 10;
-
+        double alpha = 2000;
+        
         NN nn = new NN(input_layer_size, hidden_layer_size, num_labels, lambda, num_iters);
 
         MatFileReader reader = nn.load(file);
